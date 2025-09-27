@@ -28,15 +28,23 @@ func NewRepository(log appPorts.Logger, executor *dbpg.DB) *Repository {
 func (r *Repository) Create(ctx context.Context, p params.CreateURL) (*model.URL, error) {
 	const op = "postgres.url.Repository.Create"
 
-	url, err := r.queries.CreateURL(ctx, converters.ConvertCreateParams(p))
+	rawUrl, err := r.queries.CreateURL(ctx, converters.ConvertCreateParams(p))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	//TODO implement me
-	panic("implement me")
+
+	url := converters.ConvertGenToDomain(rawUrl)
+	return &url, nil
 }
 
 func (r *Repository) ReadByAlias(ctx context.Context, alias string) (*model.URL, error) {
-	//TODO implement me
-	panic("implement me")
+	const op = "postgres.url.Repository.ReadByAlias"
+
+	rawUrl, err := r.queries.GetByAlias(ctx, alias)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	url := converters.ConvertGenToDomain(rawUrl)
+	return &url, nil
 }

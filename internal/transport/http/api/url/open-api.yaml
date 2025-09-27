@@ -1,0 +1,307 @@
+openapi: "3.0.0"
+info:
+  title: "URL Shortener API"
+  version: "0.0.1"
+  description: "API Specification for URL Shortening Service"
+
+paths:
+  /shorten:
+    post:
+      summary: "Create short URL"
+      description: "Create a new short URL from original URL"
+      tags:
+        - URLs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateURLRequest"
+      responses:
+        '201':
+          description: "Short URL created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/URLResponse"
+        '400':
+          description: "Bad request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '409':
+          description: "Alias already exists"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /s/{alias}:
+    get:
+      summary: "Redirect to original URL"
+      description: "Redirect to original URL using short alias"
+      tags:
+        - URLs
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Short URL alias"
+      responses:
+        '302':
+          description: "Redirect to original URL"
+          headers:
+            Location:
+              schema:
+                type: string
+              description: "Original URL"
+        '404':
+          description: "Short URL not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/{alias}:
+    get:
+      summary: "Get URL analytics"
+      description: "Retrieve analytics for short URL (visits, user agents, time periods)"
+      tags:
+        - Analytics
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "Short URL alias"
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: "Start date for analytics filter (ISO 8601)"
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: "End date for analytics filter (ISO 8601)"
+        - name: group_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [day, month, user_agent]
+          description: "Group analytics by time period or user agent"
+      responses:
+        '200':
+          description: "Analytics retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponse"
+        '404':
+          description: "Short URL not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    CreateURLRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          example: "https://example.com/very/long/url/path"
+          description: "Original URL to shorten"
+        alias:
+          type: string
+          example: "myalias"
+          description: "Custom alias (optional, auto-generated if not provided)"
+          minLength: 3
+          maxLength: 50
+
+    URLResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 123
+          description: "URL identifier"
+        alias:
+          type: string
+          example: "abc123"
+          description: "Short URL alias"
+        short_url:
+          type: string
+          format: uri
+          example: "https://short.domain/s/abc123"
+          description: "Full short URL"
+        original_url:
+          type: string
+          format: uri
+          example: "https://example.com/very/long/url/path"
+          description: "Original URL"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00Z"
+          description: "Creation timestamp"
+
+    AnalyticsResponse:
+      type: object
+      properties:
+        alias:
+          type: string
+          example: "abc123"
+          description: "Short URL alias"
+        original_url:
+          type: string
+          format: uri
+          example: "https://example.com/very/long/url/path"
+          description: "Original URL"
+        total_visits:
+          type: integer
+          example: 150
+          description: "Total number of visits"
+        unique_visitors:
+          type: integer
+          example: 120
+          description: "Number of unique visitors"
+        visits:
+          type: array
+          description: "Detailed visit statistics"
+          items:
+            $ref: "#/components/schemas/VisitStat"
+        daily_stats:
+          type: array
+          description: "Aggregated statistics by day"
+          items:
+            $ref: "#/components/schemas/DailyStat"
+        user_agent_stats:
+          type: array
+          description: "Aggregated statistics by user agent"
+          items:
+            $ref: "#/components/schemas/UserAgentStat"
+
+    VisitStat:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+          description: "Visit identifier"
+        user_id:
+          type: string
+          nullable: true
+          example: "user-123"
+          description: "User identifier (if available)"
+        user_agent:
+          type: string
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          description: "User agent string"
+        ip_address:
+          type: string
+          example: "192.168.1.1"
+          description: "Visitor IP address"
+        referer:
+          type: string
+          nullable: true
+          example: "https://google.com"
+          description: "HTTP referer"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:05:00Z"
+          description: "Visit timestamp"
+
+    DailyStat:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2024-01-15"
+          description: "Date of visits"
+        visit_count:
+          type: integer
+          example: 25
+          description: "Number of visits on this date"
+
+    UserAgentStat:
+      type: object
+      properties:
+        user_agent:
+          type: string
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          description: "User agent string"
+        visit_count:
+          type: integer
+          example: 45
+          description: "Number of visits with this user agent"
+
+    SuccessResponse:
+      type: object
+      required:
+        - result
+      properties:
+        result:
+          type: string
+          example: "Success"
+          description: "Success description"
+        details:
+          type: object
+          description: "Additional success details"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: "Alias already exists"
+          description: "Error message description"
+        details:
+          type: object
+          description: "Additional error details"
+
+  parameters:
+    AliasPathParameter:
+      name: alias
+      in: path
+      required: true
+      schema:
+        type: string
+      description: "Short URL alias"

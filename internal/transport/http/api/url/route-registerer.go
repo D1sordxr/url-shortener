@@ -1,41 +1,40 @@
-package notify
+package url
 
 import (
-	"github.com/D1sordxr/url-shortener/internal/transport/http/api/notify/handler"
-
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/wb-go/wbf/ginext"
 )
 
 type RouteRegisterer struct {
-	handlers    *handler.Handlers
+	handler     *handler.Handler
 	middlewares []gin.HandlerFunc
 }
 
 func NewRouteRegisterer(
-	handlers *handler.Handlers,
+	handlers *handler.Handler,
 	middlewares ...gin.HandlerFunc,
 ) *RouteRegisterer {
 	return &RouteRegisterer{
-		handlers:    handlers,
+		handler:     handlers,
 		middlewares: middlewares,
 	}
 }
 
 func (r *RouteRegisterer) RegisterRoutes(router *ginext.RouterGroup) {
-	notifyGroup := router.RouterGroup
+	urlGroup := router.RouterGroup
 	for _, mw := range r.middlewares {
-		notifyGroup.Use(mw)
+		urlGroup.Use(mw)
 	}
 
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "OK"})
+		c.JSON(200, map[string]any{"message": "OK"})
 	})
 
 	handler.RegisterHandlers(
-		notifyGroup,
+		urlGroup,
 		handler.NewStrictHandler(
-			r.handlers,
+			r.handler,
 			[]handler.StrictMiddlewareFunc{},
 		),
 	)
