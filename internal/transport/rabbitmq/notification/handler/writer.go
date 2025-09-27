@@ -2,11 +2,11 @@ package handler
 
 import (
 	"context"
+	appPorts "github.com/D1sordxr/url-shortener/internal/domain/app/ports"
+	"github.com/D1sordxr/url-shortener/internal/domain/core/notification/model"
+	"github.com/D1sordxr/url-shortener/internal/domain/core/notification/ports"
 	"sync"
 	"time"
-	appPorts "wb-tech-l3/internal/domain/app/ports"
-	"wb-tech-l3/internal/domain/core/notification/model"
-	"wb-tech-l3/internal/domain/core/notification/ports"
 
 	"github.com/google/uuid"
 )

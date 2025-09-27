@@ -3,11 +3,11 @@ package http
 import (
 	"context"
 	"errors"
+	"github.com/D1sordxr/url-shortener/internal/domain/app/ports"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/config"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/middleware"
 	"net/http"
 	"time"
-	"wb-tech-l3/internal/domain/app/ports"
-	"wb-tech-l3/internal/infra/config"
-	"wb-tech-l3/internal/transport/http/middleware"
 
 	"github.com/wb-go/wbf/ginext"
 )

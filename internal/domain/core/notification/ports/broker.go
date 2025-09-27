@@ -2,7 +2,7 @@ package ports
 
 import (
 	"context"
-	"wb-tech-l3/internal/domain/core/notification/model"
+	"github.com/D1sordxr/url-shortener/internal/domain/core/notification/model"
 )
 
 type Publisher interface {

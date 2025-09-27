@@ -1,8 +1,8 @@
 package params
 
 import (
+	"github.com/D1sordxr/url-shortener/internal/domain/core/notification/vo"
 	"time"
-	"wb-tech-l3/internal/domain/core/notification/vo"
 )
 
 type CreateNotificationParams struct {

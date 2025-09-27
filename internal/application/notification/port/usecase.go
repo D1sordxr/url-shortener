@@ -2,8 +2,8 @@ package port
 
 import (
 	"context"
-	"wb-tech-l3/internal/application/notification/input"
-	"wb-tech-l3/internal/domain/core/notification/model"
+	"github.com/D1sordxr/url-shortener/internal/application/notification/input"
+	"github.com/D1sordxr/url-shortener/internal/domain/core/notification/model"
 )
 
 type NotifyUseCase interface {

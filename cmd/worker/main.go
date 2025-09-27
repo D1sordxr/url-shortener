@@ -2,22 +2,22 @@ package main
 
 import (
 	"context"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/logger"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres"
 	"os"
 	"os/signal"
 	"time"
-	"wb-tech-l3/internal/infra/logger"
-	"wb-tech-l3/internal/infra/storage/postgres"
 
 	"github.com/rs/zerolog"
 
-	loadApp "wb-tech-l3/internal/infra/app"
-	"wb-tech-l3/internal/infra/config"
-	"wb-tech-l3/internal/infra/worker"
+	loadApp "github.com/D1sordxr/url-shortener/internal/infrastructure/app"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/config"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/worker"
 
-	rabbitAdapter "wb-tech-l3/internal/infra/broker/rabbitmq/notification"
-	"wb-tech-l3/internal/infra/cache/redis/notification"
-	notificationRepository "wb-tech-l3/internal/infra/storage/postgres/repositories/notification"
-	workerHandler "wb-tech-l3/internal/transport/rabbitmq/notification/handler"
+	rabbitAdapter "github.com/D1sordxr/url-shortener/internal/infrastructure/broker/rabbitmq/notification"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/cache/redis/notification"
+	notificationRepository "github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/notification"
+	workerHandler "github.com/D1sordxr/url-shortener/internal/transport/rabbitmq/notification/handler"
 
 	"github.com/wb-go/wbf/dbpg"
 	"github.com/wb-go/wbf/rabbitmq"

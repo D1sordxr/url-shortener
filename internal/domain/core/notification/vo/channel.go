@@ -1,7 +1,7 @@
 package vo
 
 import (
-	"wb-tech-l3/internal/domain/core/notification/errorx"
+	"github.com/D1sordxr/url-shortener/internal/domain/core/notification/errorx"
 )
 
 type Channel uint
