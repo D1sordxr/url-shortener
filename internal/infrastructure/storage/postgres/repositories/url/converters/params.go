@@ -7,7 +7,7 @@ import (
 
 func ConvertCreateParams(p params.CreateURL) gen.CreateURLParams {
 	return gen.CreateURLParams{
-		Alias: p.Alias,
-		Url:   p.Url,
+		Alias: p.Alias.String(),
+		Url:   p.URL.String(),
 	}
 }

@@ -1,13 +1,14 @@
 package model
 
 import (
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 	"time"
 )
 
 type URL struct {
 	ID        int64     `json:"id" db:"id"`
-	Alias     string    `json:"alias" db:"alias"`
-	URL       string    `json:"url" db:"url"`
+	URL       vo.URL    `json:"url" db:"url"`
+	Alias     vo.Alias  `json:"alias" db:"alias"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }

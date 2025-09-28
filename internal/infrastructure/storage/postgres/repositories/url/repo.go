@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	appPorts "github.com/D1sordxr/url-shortener/internal/domain/app/ports"
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/model"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/params"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/errordb"
 	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/url/converters"
 	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/url/gen"
 	"github.com/wb-go/wbf/dbpg"
@@ -30,6 +32,9 @@ func (r *Repository) Create(ctx context.Context, p params.CreateURL) (*model.URL
 
 	rawUrl, err := r.queries.CreateURL(ctx, converters.ConvertCreateParams(p))
 	if err != nil {
+		if errordb.IsUniqueViolation(err) {
+			return nil, fmt.Errorf("%s: %w", op, errorx.ErrAliasAlreadyExists)
+		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
