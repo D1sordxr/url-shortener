@@ -15,6 +15,8 @@ type URL struct {
 
 type URLStat struct {
 	ID        int64     `json:"id" db:"id"`
+	Alias     string    `json:"alias" db:"alias"`
+	Url       string    `json:"url" db:"url"`
 	UrlID     int64     `json:"url_id" db:"url_id"`
 	UserID    string    `json:"user_id" db:"user_id"`
 	UserAgent string    `json:"user_agent" db:"user_agent"`

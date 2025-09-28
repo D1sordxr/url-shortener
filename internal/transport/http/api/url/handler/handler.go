@@ -7,6 +7,8 @@ import (
 	"github.com/D1sordxr/url-shortener/internal/application/url/input"
 	"github.com/D1sordxr/url-shortener/internal/application/url/port"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler/converters"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler/gen"
 	"github.com/D1sordxr/url-shortener/pkg/errorz"
 )
 
@@ -20,10 +22,10 @@ func NewHandler(uc port.UseCase) *Handler {
 
 func (h *Handler) PostShorten(
 	ctx context.Context,
-	request PostShortenRequestObject,
-) (PostShortenResponseObject, error) {
+	request gen.PostShortenRequestObject,
+) (gen.PostShortenResponseObject, error) {
 	if request.Body.Url == "" {
-		return PostShorten400JSONResponse{
+		return gen.PostShorten400JSONResponse{
 			Error: "url is required",
 		}, nil
 	}
@@ -35,7 +37,7 @@ func (h *Handler) PostShorten(
 	if err != nil {
 		switch {
 		case errors.Is(err, errorx.ErrAliasAlreadyExists):
-			return PostShorten409JSONResponse{
+			return gen.PostShorten409JSONResponse{
 				Error: errorx.ErrAliasAlreadyExists.Error(),
 			}, nil
 		case errorz.In(
@@ -48,32 +50,31 @@ func (h *Handler) PostShorten(
 			errorx.ErrURLUnsupportedScheme,
 			errorx.ErrURLParseFailed,
 		):
-			return PostShorten400JSONResponse{
+			return gen.PostShorten400JSONResponse{
 				Error: fmt.Sprintf("invalid url data: %v", err),
 			}, nil
 		default:
-			return PostShorten500JSONResponse{
+			return gen.PostShorten500JSONResponse{
 				Error: fmt.Sprintf("%s: %s", "internal server error", err.Error()),
 			}, nil
 		}
 	}
 
-	resp := ConvertModelToUrlResponse(urlModel)
-	return PostShorten201JSONResponse(resp), nil
+	return gen.PostShorten201JSONResponse(converters.ConvertModelToUrlResponse(urlModel)), nil
 }
 
 func (h *Handler) GetAnalyticsAlias(
 	ctx context.Context,
-	request GetAnalyticsAliasRequestObject,
-) (GetAnalyticsAliasResponseObject, error) {
+	request gen.GetAnalyticsAliasRequestObject,
+) (gen.GetAnalyticsAliasResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
 func (h *Handler) GetSAlias(
 	ctx context.Context,
-	request GetSAliasRequestObject,
-) (GetSAliasResponseObject, error) {
+	request gen.GetSAliasRequestObject,
+) (gen.GetSAliasResponseObject, error) {
 	//TODO implement me
 	panic("implement me")
 }

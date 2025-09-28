@@ -2,6 +2,8 @@ package url
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	appPorts "github.com/D1sordxr/url-shortener/internal/domain/app/ports"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
@@ -42,14 +44,21 @@ func (r *Repository) Create(ctx context.Context, p params.CreateURL) (*model.URL
 	return &url, nil
 }
 
-func (r *Repository) ReadByAlias(ctx context.Context, alias string) (*model.URL, error) {
+func (r *Repository) GetAnalyticsByAlias(ctx context.Context, alias string) ([]model.URLStat, error) {
 	const op = "postgres.url.Repository.ReadByAlias"
 
-	rawUrl, err := r.queries.GetByAlias(ctx, alias)
+	rawStats, err := r.queries.GetUrlStats(ctx, alias)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%s: %w", op, errorx.ErrAliasDoesNotExists)
+		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	url := converters.ConvertGenToDomain(rawUrl)
-	return &url, nil
+	stats := make([]model.URLStat, len(rawStats))
+	for i, rawStat := range rawStats {
+		stats[i] = converters.ConvertGenToDomainRowStats(rawStat)
+	}
+
+	return stats, nil
 }

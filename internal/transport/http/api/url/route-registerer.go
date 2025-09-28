@@ -2,6 +2,7 @@ package url
 
 import (
 	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler/gen"
 	"github.com/wb-go/wbf/ginext"
 )
 
@@ -30,11 +31,11 @@ func (r *RouteRegisterer) RegisterRoutes(router *ginext.RouterGroup) {
 		c.JSON(200, map[string]any{"message": "OK"})
 	})
 
-	handler.RegisterHandlers(
+	gen.RegisterHandlers(
 		urlGroup,
-		handler.NewStrictHandler(
+		gen.NewStrictHandler(
 			r.handler,
-			[]handler.StrictMiddlewareFunc{},
+			[]gen.StrictMiddlewareFunc{},
 		),
 	)
 }

@@ -8,5 +8,5 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, p params.CreateURL) (*model.URL, error)
-	ReadByAlias(ctx context.Context, alias string) (*model.URL, error)
+	GetAnalyticsByAlias(ctx context.Context, alias string) ([]model.URLStat, error)
 }
