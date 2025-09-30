@@ -16,6 +16,7 @@ type Querier interface {
 	CreateURLStat(ctx context.Context, arg CreateURLStatParams) (UrlStat, error)
 	// Запрос получает url по alias
 	GetByAlias(ctx context.Context, alias string) (Url, error)
+	GetCompleteAnalytics(ctx context.Context, alias string) (GetCompleteAnalyticsRow, error)
 	// Самые популярные User-Agents
 	GetPopularUserAgents(ctx context.Context, alias string) ([]GetPopularUserAgentsRow, error)
 	// Общее количество переходов по короткой ссылке

@@ -8,6 +8,7 @@ package gen
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/sqlc-dev/pqtype"
@@ -101,6 +102,72 @@ func (q *Queries) GetByAlias(ctx context.Context, alias string) (Url, error) {
 		&i.Url,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getCompleteAnalytics = `-- name: GetCompleteAnalytics :one
+WITH stats AS (
+    SELECT
+        us.url_id,
+        COUNT(*) as total_visits,
+        COUNT(DISTINCT us.user_id) as unique_visitors,
+        MIN(us.created_at) as first_visit,
+        MAX(us.created_at) as last_visit
+    FROM url_stats us
+    GROUP BY us.url_id
+),
+     recent_visits AS (
+         SELECT
+             url_id,
+             JSON_AGG(
+                     JSON_BUILD_OBJECT(
+                             'date', DATE(created_at),
+                             'user_agent', user_agent,
+                             'ip_address', ip_address,
+                             'referer', referer,
+                             'created_at', created_at
+                     ) ORDER BY created_at DESC
+             ) as raw_stats
+         FROM url_stats
+         WHERE url_id IN (SELECT id FROM urls WHERE alias = $1)
+         GROUP BY url_id
+     )
+SELECT
+    u.alias,
+    u.url as original_url,
+    COALESCE(s.total_visits, 0) as total_visits,
+    COALESCE(s.unique_visitors, 0) as unique_visitors,
+    s.first_visit,
+    s.last_visit,
+    COALESCE(rv.raw_stats, '[]'::json) as raw_stats
+FROM urls u
+         LEFT JOIN stats s ON u.id = s.url_id
+         LEFT JOIN recent_visits rv ON u.id = rv.url_id
+WHERE u.alias = $1
+`
+
+type GetCompleteAnalyticsRow struct {
+	Alias          string          `json:"alias"`
+	OriginalUrl    string          `json:"original_url"`
+	TotalVisits    int64           `json:"total_visits"`
+	UniqueVisitors int64           `json:"unique_visitors"`
+	FirstVisit     interface{}     `json:"first_visit"`
+	LastVisit      interface{}     `json:"last_visit"`
+	RawStats       json.RawMessage `json:"raw_stats"`
+}
+
+func (q *Queries) GetCompleteAnalytics(ctx context.Context, alias string) (GetCompleteAnalyticsRow, error) {
+	row := q.db.QueryRowContext(ctx, getCompleteAnalytics, alias)
+	var i GetCompleteAnalyticsRow
+	err := row.Scan(
+		&i.Alias,
+		&i.OriginalUrl,
+		&i.TotalVisits,
+		&i.UniqueVisitors,
+		&i.FirstVisit,
+		&i.LastVisit,
+		&i.RawStats,
 	)
 	return i, err
 }

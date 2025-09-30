@@ -29,4 +29,4 @@ DROP INDEX IF EXISTS idx_url_stats_created_at;
 DROP INDEX IF EXISTS idx_url_stats_url_id;
 DROP INDEX IF EXISTS idx_urls_alias;
 DROP TABLE IF EXISTS url_stats;
-DROP TABLE IF EXISTS url_stats;
+DROP TABLE IF EXISTS urls;

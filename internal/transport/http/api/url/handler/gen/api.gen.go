@@ -16,35 +16,34 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// Defines values for GetAnalyticsAliasParamsGroupBy.
-const (
-	Day       GetAnalyticsAliasParamsGroupBy = "day"
-	Month     GetAnalyticsAliasParamsGroupBy = "month"
-	UserAgent GetAnalyticsAliasParamsGroupBy = "user_agent"
-)
-
 // AnalyticsResponse defines model for AnalyticsResponse.
 type AnalyticsResponse struct {
 	// Alias Short URL alias
-	Alias *string `json:"alias,omitempty"`
+	Alias string `json:"alias"`
 
 	// DailyStats Aggregated statistics by day
-	DailyStats *[]DailyStat `json:"daily_stats,omitempty"`
+	DailyStats []DailyStat `json:"daily_stats"`
+
+	// FirstVisit First visit timestamp
+	FirstVisit *time.Time `json:"first_visit"`
+
+	// LastVisit Last visit timestamp
+	LastVisit *time.Time `json:"last_visit"`
 
 	// OriginalUrl Original URL
-	OriginalUrl *string `json:"original_url,omitempty"`
+	OriginalUrl string `json:"original_url"`
 
 	// TotalVisits Total number of visits
-	TotalVisits *int `json:"total_visits,omitempty"`
+	TotalVisits int64 `json:"total_visits"`
 
 	// UniqueVisitors Number of unique visitors
-	UniqueVisitors *int `json:"unique_visitors,omitempty"`
+	UniqueVisitors int64 `json:"unique_visitors"`
 
 	// UserAgentStats Aggregated statistics by user agent
-	UserAgentStats *[]UserAgentStat `json:"user_agent_stats,omitempty"`
+	UserAgentStats []UserAgentStat `json:"user_agent_stats"`
 
 	// Visits Detailed visit statistics
-	Visits *[]VisitStat `json:"visits,omitempty"`
+	Visits []VisitStat `json:"visits"`
 }
 
 // CreateURLRequest defines model for CreateURLRequest.
@@ -59,10 +58,10 @@ type CreateURLRequest struct {
 // DailyStat defines model for DailyStat.
 type DailyStat struct {
 	// Date Date of visits
-	Date *openapi_types.Date `json:"date,omitempty"`
+	Date openapi_types.Date `json:"date"`
 
 	// VisitCount Number of visits on this date
-	VisitCount *int `json:"visit_count,omitempty"`
+	VisitCount int64 `json:"visit_count"`
 }
 
 // ErrorResponse defines model for ErrorResponse.
@@ -95,47 +94,29 @@ type URLResponse struct {
 // UserAgentStat defines model for UserAgentStat.
 type UserAgentStat struct {
 	// UserAgent User agent string
-	UserAgent *string `json:"user_agent,omitempty"`
+	UserAgent string `json:"user_agent"`
 
 	// VisitCount Number of visits with this user agent
-	VisitCount *int `json:"visit_count,omitempty"`
+	VisitCount int64 `json:"visit_count"`
 }
 
 // VisitStat defines model for VisitStat.
 type VisitStat struct {
 	// CreatedAt Visit timestamp
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 
-	// Id Visit identifier
-	Id *int64 `json:"id,omitempty"`
+	// Date Date of the visit
+	Date openapi_types.Date `json:"date"`
 
 	// IpAddress Visitor IP address
-	IpAddress *string `json:"ip_address,omitempty"`
+	IpAddress string `json:"ip_address"`
 
 	// Referer HTTP referer
 	Referer *string `json:"referer"`
 
 	// UserAgent User agent string
-	UserAgent *string `json:"user_agent,omitempty"`
-
-	// UserId User identifier (if available)
-	UserId *string `json:"user_id"`
+	UserAgent string `json:"user_agent"`
 }
-
-// GetAnalyticsAliasParams defines parameters for GetAnalyticsAlias.
-type GetAnalyticsAliasParams struct {
-	// StartDate Start date for analytics filter (ISO 8601)
-	StartDate *time.Time `form:"start_date,omitempty" json:"start_date,omitempty"`
-
-	// EndDate End date for analytics filter (ISO 8601)
-	EndDate *time.Time `form:"end_date,omitempty" json:"end_date,omitempty"`
-
-	// GroupBy Group analytics by time period or user agent
-	GroupBy *GetAnalyticsAliasParamsGroupBy `form:"group_by,omitempty" json:"group_by,omitempty"`
-}
-
-// GetAnalyticsAliasParamsGroupBy defines parameters for GetAnalyticsAlias.
-type GetAnalyticsAliasParamsGroupBy string
 
 // PostShortenJSONRequestBody defines body for PostShorten for application/json ContentType.
 type PostShortenJSONRequestBody = CreateURLRequest
@@ -144,7 +125,7 @@ type PostShortenJSONRequestBody = CreateURLRequest
 type ServerInterface interface {
 	// Get URL analytics
 	// (GET /analytics/{alias})
-	GetAnalyticsAlias(c *gin.Context, alias string, params GetAnalyticsAliasParams)
+	GetAnalyticsAlias(c *gin.Context, alias string)
 	// Redirect to original URL
 	// (GET /s/{alias})
 	GetSAlias(c *gin.Context, alias string)
@@ -176,33 +157,6 @@ func (siw *ServerInterfaceWrapper) GetAnalyticsAlias(c *gin.Context) {
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetAnalyticsAliasParams
-
-	// ------------- Optional query parameter "start_date" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "start_date", c.Request.URL.Query(), &params.StartDate)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter start_date: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	// ------------- Optional query parameter "end_date" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "end_date", c.Request.URL.Query(), &params.EndDate)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter end_date: %w", err), http.StatusBadRequest)
-		return
-	}
-
-	// ------------- Optional query parameter "group_by" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "group_by", c.Request.URL.Query(), &params.GroupBy)
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter group_by: %w", err), http.StatusBadRequest)
-		return
-	}
-
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -210,7 +164,7 @@ func (siw *ServerInterfaceWrapper) GetAnalyticsAlias(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetAnalyticsAlias(c, alias, params)
+	siw.Handler.GetAnalyticsAlias(c, alias)
 }
 
 // GetSAlias operation middleware
@@ -283,8 +237,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 }
 
 type GetAnalyticsAliasRequestObject struct {
-	Alias  string `json:"alias"`
-	Params GetAnalyticsAliasParams
+	Alias string `json:"alias"`
 }
 
 type GetAnalyticsAliasResponseObject interface {
@@ -428,11 +381,10 @@ type strictHandler struct {
 }
 
 // GetAnalyticsAlias operation middleware
-func (sh *strictHandler) GetAnalyticsAlias(ctx *gin.Context, alias string, params GetAnalyticsAliasParams) {
+func (sh *strictHandler) GetAnalyticsAlias(ctx *gin.Context, alias string) {
 	var request GetAnalyticsAliasRequestObject
 
 	request.Alias = alias
-	request.Params = params
 
 	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetAnalyticsAlias(ctx, request.(GetAnalyticsAliasRequestObject))
