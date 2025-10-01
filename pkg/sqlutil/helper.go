@@ -35,9 +35,9 @@ func ToNullBool(b *bool) sql.NullBool {
 	return sql.NullBool{Valid: false}
 }
 
-func ToInet(ipAddr *net.IPAddr) pqtype.Inet {
-	if ipAddr != nil && ipAddr.IP != nil {
-		ip := ipAddr.IP
+func ToInet(ipAddr *net.IP) pqtype.Inet {
+	if ipAddr != nil {
+		ip := *ipAddr
 		if ipv4 := ip.To4(); ipv4 != nil {
 			return pqtype.Inet{
 				IPNet: net.IPNet{

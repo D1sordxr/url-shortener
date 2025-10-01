@@ -10,6 +10,7 @@ import (
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/ports"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 	"github.com/D1sordxr/url-shortener/pkg/logger"
+	"net"
 	"time"
 )
 
@@ -88,11 +89,16 @@ func (uc *UseCase) GetForRedirect(ctx context.Context, i input.GetForRedirect) (
 		statCtx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
 
+		var ip net.IP
+		if i.IpAddress != nil {
+			ip = net.ParseIP(*i.IpAddress)
+		}
+
 		stat, statErr := uc.repo.CreateStat(statCtx, params.CreateURLStat{
 			UrlID:     url.ID,
 			UserID:    i.UserID,
 			UserAgent: i.UserAgent,
-			IpAddress: i.IpAddress,
+			IpAddress: &ip,
 			Referer:   i.Referer,
 		})
 		if statErr != nil {

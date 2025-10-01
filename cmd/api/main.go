@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/D1sordxr/url-shortener/internal/infrastructure/logger"
 	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url"
+	handler2 "github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/middleware"
 	"os"
 	"os/signal"
 	"syscall"
@@ -58,10 +61,13 @@ func main() {
 	notificationHandlers := handler.NewHandlers(notificationUC)
 	notificationRouteRegisterer := notify.NewRouteRegisterer(notificationHandlers)
 
+	urlHandler := handler2.NewHandler()
+	urlRouteRegisterer := url.NewRouteRegisterer(urlHandler, middleware.Stat)
+
 	httpServer := http.NewServer(
 		log,
 		&cfg.Server,
-		notificationRouteRegisterer,
+		urlRouteRegisterer,
 	)
 
 	app := loadApp.NewApp(

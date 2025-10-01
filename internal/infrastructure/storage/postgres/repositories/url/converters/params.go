@@ -18,7 +18,7 @@ func ConvertCreateStatParams(p params.CreateURLStat) gen.CreateURLStatParams {
 		UrlID:     int32(p.UrlID),
 		UserID:    sqlutil.ToNullString(p.UserID),
 		UserAgent: sqlutil.ToNullString(p.UserAgent),
-		IpAddress: sqlutil.ToInet(p.IpAddress),
+		IpAddress: sqlutil.ToInetFromIP(*p.IpAddress),
 		Referer:   sqlutil.ToNullString(p.Referer),
 	}
 }

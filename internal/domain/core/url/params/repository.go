@@ -11,9 +11,9 @@ type CreateURL struct {
 }
 
 type CreateURLStat struct {
-	UrlID     int64       `json:"url_id"`
-	UserID    *string     `json:"user_id"`
-	UserAgent *string     `json:"user_agent"`
-	IpAddress *net.IPAddr `json:"ip_address"`
-	Referer   *string     `json:"referer"`
+	UrlID     int64   `json:"url_id"`
+	UserID    *string `json:"user_id"`
+	UserAgent *string `json:"user_agent"`
+	IpAddress *net.IP `json:"ip_address"`
+	Referer   *string `json:"referer"`
 }

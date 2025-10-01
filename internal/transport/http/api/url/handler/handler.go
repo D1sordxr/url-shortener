@@ -1,15 +1,18 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/D1sordxr/url-shortener/internal/application/url/input"
 	"github.com/D1sordxr/url-shortener/internal/application/url/port"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler/converters"
 	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler/gen"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/middleware"
 	"github.com/D1sordxr/url-shortener/pkg/errorz"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
@@ -20,22 +23,29 @@ func NewHandler(uc port.UseCase) *Handler {
 	return &Handler{uc: uc}
 }
 
-func (h *Handler) PostShorten(
-	ctx context.Context,
-	request gen.PostShortenRequestObject,
-) (gen.PostShortenResponseObject, error) {
-	if request.Body.Url == "" {
-		return gen.PostShorten400JSONResponse{Error: "url is required"}, nil
+func (h *Handler) PostShorten(c *gin.Context) {
+	var request struct {
+		URL   string  `json:"url" binding:"required,url"`
+		Alias *string `json:"alias,omitempty" binding:"omitempty,min=3,max=50"`
 	}
 
-	urlModel, err := h.uc.Create(ctx, input.Create{
-		URL:   request.Body.Url,
-		Alias: request.Body.Alias,
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gen.ErrorResponse{
+			Error: "invalid request body: " + err.Error(),
+		})
+		return
+	}
+
+	urlModel, err := h.uc.Create(c.Request.Context(), input.Create{
+		URL:   request.URL,
+		Alias: request.Alias,
 	})
 	if err != nil {
 		switch {
 		case errors.Is(err, errorx.ErrAliasAlreadyExists):
-			return gen.PostShorten409JSONResponse{Error: "alias already exists"}, nil
+			c.JSON(http.StatusConflict, gen.ErrorResponse{
+				Error: "alias already exists",
+			})
 		case errorz.In(
 			err,
 			errorx.ErrInvalidAliasLength,
@@ -46,64 +56,82 @@ func (h *Handler) PostShorten(
 			errorx.ErrURLUnsupportedScheme,
 			errorx.ErrURLParseFailed,
 		):
-			return gen.PostShorten400JSONResponse{Error: fmt.Sprintf("invalid url data: %v", err)}, nil
+			c.JSON(http.StatusBadRequest, gen.ErrorResponse{
+				Error: fmt.Sprintf("invalid url data: %v", err),
+			})
 		default:
-			return gen.PostShorten500JSONResponse{Error: fmt.Sprintf(
-				"%s: %s", "internal server error", err.Error()),
-			}, nil
+			c.JSON(http.StatusInternalServerError, gen.ErrorResponse{
+				Error: "internal server error",
+			})
 		}
+		return
 	}
 
-	return gen.PostShorten201JSONResponse(converters.ConvertModelToResponse(urlModel)), nil
+	c.JSON(http.StatusCreated, converters.ConvertModelToResponse(urlModel))
 }
 
-func (h *Handler) GetAnalyticsAlias(
-	ctx context.Context,
-	request gen.GetAnalyticsAliasRequestObject,
-) (gen.GetAnalyticsAliasResponseObject, error) {
-	if request.Alias == "" {
-		return gen.GetAnalyticsAlias404JSONResponse{Error: "alias is required"}, nil
+func (h *Handler) GetAnalyticsAlias(c *gin.Context, alias string) {
+	if alias == "" {
+		c.JSON(http.StatusBadRequest, gen.ErrorResponse{
+			Error: "alias is required",
+		})
+		return
 	}
 
-	analytics, err := h.uc.GetCompleteAnalytics(ctx, request.Alias)
+	analytics, err := h.uc.GetCompleteAnalytics(c.Request.Context(), alias)
 	if err != nil {
 		switch {
 		case errorz.In(err, errorx.ErrAliasDoesNotExists, errorx.ErrInvalidAliasLength):
-			return gen.GetAnalyticsAlias404JSONResponse{Error: "invalid alias"}, nil
+			c.JSON(http.StatusNotFound, gen.ErrorResponse{
+				Error: "alias not found",
+			})
 		default:
-			return gen.GetAnalyticsAlias500JSONResponse{Error: "internal server error"}, nil
+			c.JSON(http.StatusInternalServerError, gen.ErrorResponse{
+				Error: "internal server error",
+			})
 		}
-
+		return
 	}
 
-	return gen.GetAnalyticsAlias200JSONResponse(converters.ConvertAnalyticsToResponse(analytics)), nil
+	c.JSON(http.StatusOK, converters.ConvertAnalyticsToResponse(analytics))
 }
 
-func (h *Handler) GetSAlias(
-	ctx context.Context,
-	request gen.GetSAliasRequestObject,
-) (gen.GetSAliasResponseObject, error) {
-	if request.Alias == "" {
-		return gen.GetSAlias404JSONResponse{Error: "alias is required"}, nil
+func (h *Handler) GetSAlias(c *gin.Context, alias string) {
+	if alias == "" {
+		c.JSON(http.StatusBadRequest, gen.ErrorResponse{
+			Error: "alias is required",
+		})
+		return
 	}
 
-	url, err := h.uc.GetForRedirect(ctx, input.GetForRedirect{
-		Alias:     "",
-		UserID:    nil,
-		UserAgent: nil,
-		IpAddress: nil,
-		Referer:   nil,
-	})
+	ip := middleware.ReadIPFromCtx(c)
+	userID := middleware.ReadUserIDFromCtx(c)
+	userAgent := middleware.ReadUserAgentFromCtx(c)
+	referer := middleware.ReadRefererFromCtx(c)
+
+	redirectInput := input.GetForRedirect{
+		Alias:     alias,
+		UserID:    &userID,
+		UserAgent: &userAgent,
+		IpAddress: &ip,
+		Referer:   &referer,
+	}
+
+	url, err := h.uc.GetForRedirect(c.Request.Context(), redirectInput)
 	if err != nil {
 		switch {
-		case errorz.In(err, errorx.ErrAliasDoesNotExists, errorx.ErrInvalidAliasLength):
-			return gen.GetSAlias404JSONResponse{Error: "invalid alias"}, nil
+		case errors.Is(err, errorx.ErrAliasDoesNotExists),
+			errorz.In(err, errorx.ErrInvalidAliasLength):
+			c.JSON(http.StatusNotFound, gen.ErrorResponse{
+				Error: "alias not found",
+			})
 		default:
-			return gen.GetSAlias500JSONResponse{Error: "internal server error"}, nil
+			c.JSON(http.StatusInternalServerError, gen.ErrorResponse{
+				Error: "internal server error",
+			})
 		}
+		return
 	}
 
-	return gen.GetSAlias302Response{
-		Headers: gen.GetSAlias302ResponseHeaders{Location: url.String()},
-	}, nil
+	c.Redirect(http.StatusFound, url.String())
 }

@@ -31,11 +31,5 @@ func (r *RouteRegisterer) RegisterRoutes(router *ginext.RouterGroup) {
 		c.JSON(200, map[string]any{"message": "OK"})
 	})
 
-	gen.RegisterHandlers(
-		urlGroup,
-		gen.NewStrictHandler(
-			r.handler,
-			[]gen.StrictMiddlewareFunc{},
-		),
-	)
+	gen.RegisterHandlers(urlGroup, r.handler)
 }
