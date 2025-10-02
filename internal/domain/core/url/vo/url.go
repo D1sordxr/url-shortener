@@ -2,15 +2,15 @@ package vo
 
 import (
 	"fmt"
-	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 	"net/url"
 	"strings"
+
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 )
 
 type URL string
 
 const (
-	urlPrefix     = "http://"
 	safeUrlPrefix = "https://"
 )
 
@@ -113,31 +113,4 @@ func normalizeURL(rawURL string) string {
 		return safeUrlPrefix + rawURL
 	}
 	return rawURL
-}
-
-// Helper functions to check error types
-func IsURLEmptyError(err error) bool {
-	return err == errorx.ErrURLEmpty
-}
-
-func IsURLInvalidFormatError(err error) bool {
-	return err == errorx.ErrURLInvalidFormat ||
-		strings.Contains(err.Error(), errorx.ErrURLInvalidFormat.Error())
-}
-
-func IsURLMissingSchemeError(err error) bool {
-	return err == errorx.ErrURLMissingScheme
-}
-
-func IsURLMissingHostError(err error) bool {
-	return err == errorx.ErrURLMissingHost
-}
-
-func IsURLUnsupportedSchemeError(err error) bool {
-	return err == errorx.ErrURLUnsupportedScheme
-}
-
-func IsURLParseFailedError(err error) bool {
-	return err == errorx.ErrURLParseFailed ||
-		strings.Contains(err.Error(), errorx.ErrURLParseFailed.Error())
 }

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+
 	"github.com/D1sordxr/url-shortener/internal/infrastructure/config"
 
 	"github.com/pressly/goose/v3"

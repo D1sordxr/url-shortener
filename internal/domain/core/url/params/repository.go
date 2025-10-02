@@ -1,8 +1,9 @@
 package params
 
 import (
-	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 	"net"
+
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 )
 
 type CreateURL struct {

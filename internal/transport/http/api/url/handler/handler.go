@@ -19,19 +19,19 @@ type Handler struct {
 	uc port.UseCase
 }
 
-func NewHandler(uc port.UseCase) *Handler {
+func New(uc port.UseCase) *Handler {
 	return &Handler{uc: uc}
 }
 
 func (h *Handler) PostShorten(c *gin.Context) {
 	var request struct {
 		URL   string  `json:"url" binding:"required,url"`
-		Alias *string `json:"alias,omitempty" binding:"omitempty,min=3,max=50"`
+		Alias *string `json:"alias,omitempty" binding:"omitempty,max=128"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gen.ErrorResponse{
-			Error: "invalid request body: " + err.Error(),
+			Error: fmt.Sprintf("%s: %v", "invalid request body", err),
 		})
 		return
 	}

@@ -1,10 +1,11 @@
-package url
+package repo
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+
 	appPorts "github.com/D1sordxr/url-shortener/internal/domain/app/ports"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/model"

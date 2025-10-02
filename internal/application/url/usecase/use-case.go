@@ -3,6 +3,9 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/D1sordxr/url-shortener/internal/application/url/input"
 	appPorts "github.com/D1sordxr/url-shortener/internal/domain/app/ports"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/model"
@@ -10,8 +13,6 @@ import (
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/ports"
 	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 	"github.com/D1sordxr/url-shortener/pkg/logger"
-	"net"
-	"time"
 )
 
 type UseCase struct {
@@ -19,7 +20,7 @@ type UseCase struct {
 	repo ports.Repository
 }
 
-func NewUseCase(
+func New(
 	log appPorts.Logger,
 	repo ports.Repository,
 ) *UseCase {
@@ -37,7 +38,7 @@ func (uc *UseCase) Create(ctx context.Context, create input.Create) (*model.URL,
 
 	urlValue, err := vo.NewURL(create.URL)
 	if err != nil {
-		uc.log.Error("Error parsing URL", logFields("error", err.Error()))
+		uc.log.Error("Error parsing URL", logFields("error", err.Error())...)
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -48,7 +49,7 @@ func (uc *UseCase) Create(ctx context.Context, create input.Create) (*model.URL,
 	default:
 		aliasValue, err = vo.NewAlias(*create.Alias)
 		if err != nil {
-			uc.log.Error("Error parsing URL alias", logFields("error", err.Error()))
+			uc.log.Error("Error parsing URL alias", logFields("error", err.Error())...)
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 	}
@@ -58,7 +59,7 @@ func (uc *UseCase) Create(ctx context.Context, create input.Create) (*model.URL,
 		URL:   urlValue,
 	})
 	if err != nil {
-		uc.log.Error("Error creating URL", logFields("error", err.Error()))
+		uc.log.Error("Error creating URL", logFields("error", err.Error())...)
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -75,18 +76,18 @@ func (uc *UseCase) GetForRedirect(ctx context.Context, i input.GetForRedirect) (
 
 	aliasValue, err := vo.NewAlias(i.Alias)
 	if err != nil {
-		uc.log.Error("Error parsing URL alias", logFields("error", err.Error()))
+		uc.log.Error("Error parsing URL alias", logFields("error", err.Error())...)
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	url, err := uc.repo.ReadURLByAlias(ctx, aliasValue)
 	if err != nil {
-		uc.log.Error("Error getting URL by alias", logFields("error", err.Error()))
+		uc.log.Error("Error getting URL by alias", logFields("error", err.Error())...)
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	go func() {
-		statCtx, cancel := context.WithTimeout(ctx, time.Second*5)
+		statCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
 
 		var ip net.IP
@@ -102,7 +103,9 @@ func (uc *UseCase) GetForRedirect(ctx context.Context, i input.GetForRedirect) (
 			Referer:   i.Referer,
 		})
 		if statErr != nil {
-			uc.log.Error("Error creating stat", logFields("error", statErr.Error()))
+			uc.log.Error("Error creating stat", logFields(
+				"error", statErr.Error(),
+			)...)
 			return
 		}
 		uc.log.Info("URL stat created", logFields(
@@ -129,12 +132,12 @@ func (uc *UseCase) GetCompleteAnalytics(ctx context.Context, alias string) (*mod
 
 	validAlias, err := vo.NewAlias(alias)
 	if err != nil {
-		uc.log.Error("Error parsing URL alias", logFields("error", err.Error()))
+		uc.log.Error("Error parsing URL alias", logFields("error", err.Error())...)
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	analytics, err := uc.repo.GetCompleteAnalytics(ctx, validAlias)
 	if err != nil {
-		uc.log.Error("Error getting analytics by alias", logFields("error", err.Error()))
+		uc.log.Error("Error getting analytics by alias", logFields("error", err.Error())...)
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 

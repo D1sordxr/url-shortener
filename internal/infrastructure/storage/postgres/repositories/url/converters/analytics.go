@@ -3,10 +3,11 @@ package converters
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/D1sordxr/url-shortener/internal/domain/core/url/model"
-	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/url/gen"
 	"sort"
 	"time"
+
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/model"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/url/gen"
 )
 
 func ConvertAnalyticsToDomain(row gen.GetCompleteAnalyticsRow) (*model.Analytics, error) {
@@ -129,6 +130,7 @@ func aggregateUserAgentStats(visits []model.VisitStat) []model.UserAgentStat {
 		})
 	}
 
+	sortUserAgentStats(uaStats)
 	return uaStats
 }
 

@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 	"time"
+
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/vo"
 )
 
 type URL struct {

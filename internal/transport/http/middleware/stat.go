@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"github.com/wb-go/wbf/ginext"
 	"net/http"
 	"strings"
+
+	"github.com/wb-go/wbf/ginext"
 )
 
 const (

@@ -1,9 +1,9 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: delayed-notifier-postgres
+    container_name: url-shortener-postgres
     environment:
-      POSTGRES_DB: orders-db
+      POSTGRES_DB: url-shortener-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -11,53 +11,35 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d orders-db" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d url-shortener-db" ]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: delayed-notifier-rabbitmq
-    restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=delayed-notifier-password
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
-
   redis:
     image: bitnami/redis:latest
-    container_name: delayed-notifier-redis
+    container_name: url-shortener-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     environment:
-      - REDIS_PASSWORD=delayed-notifier-password
+      - REDIS_PASSWORD=url-shortener-password
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "delayed-notifier-password", "ping"]
+      test: ["CMD", "redis-cli", "-a", "url-shortener-password", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
 
   api:
     build:
-      context: delayed-notifier
+      context: .  # Changed from Dockerfile to current directory
+      dockerfile: Dockerfile  # Explicitly specify the Dockerfile
       target: builder
     command: ["/app/api"]
-    container_name: delayed-notifier-api
+    container_name: url-shortener-api
     ports:
       - "8080:8080"
     depends_on:
@@ -76,26 +58,6 @@ services:
       retries: 3
       start_period: 60s
 
-  worker:
-    build:
-      context: delayed-notifier
-      target: builder
-    command: [ "/app/worker" ]
-    container_name: delayed-notifier-worker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-    environment:
-      CONFIG_PATH: ./configs/worker/prod.yaml
-    restart: on-failure
-
 volumes:
-  rabbitmq_data:
   redis_data:
   pgdata:

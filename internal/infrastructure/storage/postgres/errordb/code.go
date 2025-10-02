@@ -2,6 +2,7 @@ package errordb
 
 import (
 	"errors"
+
 	"github.com/lib/pq"
 )
 

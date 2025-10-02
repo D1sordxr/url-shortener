@@ -2,28 +2,23 @@ package main
 
 import (
 	"context"
-	"github.com/D1sordxr/url-shortener/internal/infrastructure/logger"
-	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres"
-	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url"
-	handler2 "github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler"
-	"github.com/D1sordxr/url-shortener/internal/transport/http/middleware"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/D1sordxr/url-shortener/internal/application/url/usecase"
 	loadApp "github.com/D1sordxr/url-shortener/internal/infrastructure/app"
 	"github.com/D1sordxr/url-shortener/internal/infrastructure/config"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/logger"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres"
+	"github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/url/repo"
 	"github.com/D1sordxr/url-shortener/internal/transport/http"
-
-	notificationUseCase "github.com/D1sordxr/url-shortener/internal/application/notification/usecase"
-	notificationCache "github.com/D1sordxr/url-shortener/internal/infrastructure/cache/redis/notification"
-	notificationRepository "github.com/D1sordxr/url-shortener/internal/infrastructure/storage/postgres/repositories/notification"
-	"github.com/D1sordxr/url-shortener/internal/transport/http/api/notify"
-	"github.com/D1sordxr/url-shortener/internal/transport/http/api/notify/handler"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/api/url/handler"
+	"github.com/D1sordxr/url-shortener/internal/transport/http/middleware"
 
 	"github.com/rs/zerolog"
 	"github.com/wb-go/wbf/dbpg"
-	"github.com/wb-go/wbf/redis"
 	"github.com/wb-go/wbf/zlog"
 )
 
@@ -46,22 +41,10 @@ func main() {
 		log.Error("Failed to setup storage", "error", err.Error())
 		return
 	}
-	notificationRepo := notificationRepository.NewRepository(log, storageConn)
 
-	cacheConn := redis.New(cfg.Cache.ClientAddress, cfg.Cache.Password, 1)
-	defer func() { _ = cacheConn.Close() }()
-	notificationCacheAdapter := notificationCache.NewAdapter(cacheConn)
-
-	notificationUC := notificationUseCase.NewUseCase(
-		log,
-		notificationCacheAdapter,
-		notificationRepo,
-	)
-
-	notificationHandlers := handler.NewHandlers(notificationUC)
-	notificationRouteRegisterer := notify.NewRouteRegisterer(notificationHandlers)
-
-	urlHandler := handler2.NewHandler()
+	urlRepository := repo.NewRepository(log, storageConn)
+	urlUC := usecase.New(log, urlRepository)
+	urlHandler := handler.New(urlUC)
 	urlRouteRegisterer := url.NewRouteRegisterer(urlHandler, middleware.Stat)
 
 	httpServer := http.NewServer(

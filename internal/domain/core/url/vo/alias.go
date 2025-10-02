@@ -1,9 +1,10 @@
 package vo
 
 import (
-	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 	"math/rand"
 	"time"
+
+	"github.com/D1sordxr/url-shortener/internal/domain/core/url/errorx"
 )
 
 const (

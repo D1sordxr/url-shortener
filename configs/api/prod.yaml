@@ -1,7 +1,7 @@
 storage:
   host: "postgres"
   port: 5432
-  database: "orders-db"
+  database: "url-shortener-db"
   user: "postgres"
   password: "postgres"
   migrations: true
@@ -9,7 +9,7 @@ storage:
 
 cache:
   client_address: "redis:6379"
-  password: "delayed-notifier-password"
+  password: "url-shortener-password"
 
 server:
   address: "0.0.0.0"
